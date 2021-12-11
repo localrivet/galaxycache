@@ -261,10 +261,6 @@ type Galaxy struct {
 	// concurrent callers.
 	loadGroup flightGroup
 
-	// removeGroup ensures that each removed key is only removed
-	// remotely once regardless of the number of concurrent callers.
-	removeGroup flightGroup
-
 	opts galaxyOpts
 
 	_ int32 // force Stats to be 8-byte aligned on 32-bit platforms
@@ -476,7 +472,7 @@ func (g *Galaxy) Get(ctx context.Context, key string, dest Codec) error {
 func (g *Galaxy) Remove(ctx context.Context, key string) error {
 	// g.peersOnce.Do(g.initPeers)
 
-	_, err := g.removeGroup.Do(key, func() (interface{}, error) {
+	_, err := g.loadGroup.Do(key, func() (interface{}, error) {
 
 		// Remove from key owner first
 		owner, ok := g.peerPicker.pickPeer(key)
